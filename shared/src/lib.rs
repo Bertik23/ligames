@@ -185,7 +185,18 @@ impl Tango {
         }
     }
 
-    fn get_tile(&self, x: usize, y: usize) -> Option<TangoTile> {
+    pub fn cycle_tile(&mut self, x: usize, y: usize) {
+        if let Some(existing_tile) = self.grid.get_mut(x, y) {
+            let new_tile = match *existing_tile {
+                TangoTile::Empty => TangoTile::Red,
+                TangoTile::Red => TangoTile::Blue,
+                TangoTile::Blue => TangoTile::Empty,
+            };
+            *existing_tile = new_tile;
+        }
+    }
+
+    pub fn get_tile(&self, x: usize, y: usize) -> Option<TangoTile> {
         self.grid.get(x, y).cloned()
     }
 
