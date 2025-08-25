@@ -1,42 +1,39 @@
 use std::{collections::BTreeSet, fmt::Display};
 
-use axum::{
-    extract::Json,
-    routing::{get, post},
-    Router,
-};
 use rand::seq::IteratorRandom;
 use rand::{random_bool, Rng};
+use serde::Deserialize;
 use serde::Serialize;
-use tower_http::cors::{Any, CorsLayer};
 
-#[derive(Debug, Clone, Serialize)]
-struct Tango {
-    grid: Grid<TangoTile>,
-    restrictions: Vec<TangoRestriction>,
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Tango {
+    pub grid: Grid<TangoTile>,
+    pub restrictions: Vec<TangoRestriction>,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize,
+)]
 #[serde(rename_all = "PascalCase")]
-enum TangoTile {
+pub enum TangoTile {
     #[default]
     Empty,
     Red,
     Blue,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
-enum TangoRestriction {
+pub enum TangoRestriction {
     Same((usize, usize), (usize, usize)),
     Different((usize, usize), (usize, usize)),
 }
 
-#[derive(Debug, Clone, Serialize)]
-struct Grid<T> {
-    width: usize,
-    height: usize,
-    tiles: Vec<T>,
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Grid<T> {
+    pub width: usize,
+    pub height: usize,
+    pub tiles: Vec<T>,
 }
 
 impl Display for TangoTile {
@@ -344,14 +341,14 @@ impl RecursiveTangoSolver {
     }
 }
 
-struct TangoGenerator {
+pub struct TangoGenerator {
     width: usize,
     height: usize,
     neighbor_pairs: Vec<((usize, usize), (usize, usize))>,
 }
 
 impl TangoGenerator {
-    fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         TangoGenerator {
             width,
             height,
@@ -365,7 +362,7 @@ impl TangoGenerator {
         }
     }
 
-    fn generate(&self) -> Tango {
+    pub fn generate(&self) -> Tango {
         // Placeholder for actual generation logic
         let mut tango = Tango::new(self.width, self.height, vec![])
             .expect("Failed to create Tango");
@@ -401,7 +398,7 @@ impl TangoGenerator {
         tango
     }
 
-    fn generate_one_solution_tango() -> Tango {
+    pub fn generate_one_solution_tango() -> Tango {
         let tango_generator = TangoGenerator::new(6, 6);
 
         let mut try_count = 0;
@@ -424,25 +421,4 @@ impl TangoGenerator {
             }
         }
     }
-}
-
-#[tokio::main]
-async fn main() {
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
-    let app = Router::new()
-        .route(
-            "/api/tango-board",
-            get(|| async {
-                axum::Json(serde_json::json!(
-                    TangoGenerator::generate_one_solution_tango()
-                ))
-            }),
-        )
-        .layer(cors);
-
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
 }
